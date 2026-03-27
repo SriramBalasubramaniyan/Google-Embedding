@@ -26,10 +26,9 @@ cache_file_path = cache_dir/cache_file
 system_prompt = """
     Rules:
     - Answer in friednly and easy to understand terms
-    - Keep the answer short an compact
     - dont ask follow up questions
     - Explain step by step
-    - Use only provided context
+    - Do not use outside knowledge
     - Do not hallucinate
     - If you don't know the answer, say "I don't know" instead of making up an answer.
     - Never share any personal information or sensitive data.
@@ -116,9 +115,11 @@ while True:
             score = cosine_similarity(qry_emb, emb)
             scores.append((doc, score))
         
-        scores.sort(key=lambda x :x[1], reverse=True)
+        top_k = [(doc, score) for doc, score in scores if score > 0.5][:3]
 
-        top_k = scores[:3]
+        if not top_k:
+            print("No relevant context found")
+            continue
 
         context = "\n".join([doc for doc, _ in top_k])
 
@@ -129,17 +130,16 @@ while True:
             context:{context}
             question:{qry}
         '''
-        history.append({
-            "role": "user",
-            "parts": [{"text": prompt}]
-        })
-        
+
         # Trim history BEFORE sending    
         history = trim_history(history, system_prompt)
 
         stream = client.models.generate_content_stream(
             model=gen_model_name,
-            contents=history, # Pass the conversation history to maintain context
+            contents=history + [{
+                "role": "user",
+                "parts": [{"text": prompt}]
+            }], # Pass the conversation history to maintain context
             config=types.GenerateContentConfig(
                 temperature=0.7, # Adjust the temperature for more creative responses
                 system_instruction=[{"text": system_prompt}]
@@ -163,6 +163,11 @@ while True:
     except Exception as e:
         print(f"An error occurred: {e}")
         continue
+
+    history.append({
+        "role": "user",
+        "parts": [{"text": qry}]
+    })
 
     history.append({
         "role": "model",
