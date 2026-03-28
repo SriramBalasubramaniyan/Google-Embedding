@@ -69,8 +69,6 @@ while True:
             contents=qry
         ).embeddings[0].values
 
-        best_match = None
-        best_score = -1
         scores = []
         
         for doc, emb in doc_embedding:
