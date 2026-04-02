@@ -20,12 +20,7 @@ embed_model_name = ""
 
 cache_file_path = cache_dir/cache_file
 
-documents = [
-    "Flutter is used for mobile development",
-    "Python is used for AI",
-    "Dart is Flutter's language",
-    "AI uses machine learning"
-]
+documents = []
 
 if embed_model_name == "":
     embed_model_name = os.getenv("EMBEDDING_MODEL_NAME").strip() or "gemini-embedding-001"
